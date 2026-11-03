@@ -33,6 +33,7 @@ from .topic_analysis import (
     _clusterizar_embeddings,
     _crear_completion_con_reintento,
     _nombrar_clusters,
+    _nombre_fallback,
     generar_embeddings,
 )
 
@@ -92,14 +93,18 @@ def _leer_cursor(conn, rol: str) -> int:
     return row[0] if row else 0
 
 
-def _preguntas_nuevas(conn, rol: str, cursor: int) -> pd.DataFrame:
+def _preguntas_nuevas(conn, rol: str, cursor: int, prefijo_usuario: str = None) -> pd.DataFrame:
     df = pd.read_sql_query(
         "SELECT id, usuario, pregunta FROM consultas WHERE id > ? ORDER BY id",
         conn, params=(cursor,),
     )
     df = df.dropna(subset=["pregunta"])
     df = df[df["pregunta"].str.strip() != ""]
-    return filtrar_por_rol(df, rol)
+    df = filtrar_por_rol(df, rol)
+    if prefijo_usuario and not df.empty:
+        mascara = df["usuario"].astype(str).str.lower().str.startswith(prefijo_usuario)
+        df = df[mascara].reset_index(drop=True)
+    return df
 
 
 def _normalizadas_existentes(conn, rol: str) -> set:
@@ -109,10 +114,10 @@ def _normalizadas_existentes(conn, rol: str) -> set:
     return {f[0] for f in filas}
 
 
-def _pendientes_dedup(conn, rol: str) -> tuple:
+def _pendientes_dedup(conn, rol: str, prefijo_usuario: str = None) -> tuple:
     """Retorna (pendientes: list[(pregunta_norm, primera_consulta_id)], max_id_visto: int)."""
     cursor = _leer_cursor(conn, rol)
-    candidatas = _preguntas_nuevas(conn, rol, cursor)
+    candidatas = _preguntas_nuevas(conn, rol, cursor, prefijo_usuario)
     max_id_visto = int(candidatas["id"].max()) if not candidatas.empty else cursor
 
     existentes = _normalizadas_existentes(conn, rol)
@@ -127,16 +132,16 @@ def _pendientes_dedup(conn, rol: str) -> tuple:
     return pendientes, max_id_visto
 
 
-def contar_pendientes(rol: str, db_path: str) -> int:
+def contar_pendientes(rol: str, db_path: str, prefijo_usuario: str = None) -> int:
     conn = sqlite3.connect(db_path)
     try:
-        pendientes, _ = _pendientes_dedup(conn, rol)
+        pendientes, _ = _pendientes_dedup(conn, rol, prefijo_usuario)
         return len(pendientes)
     finally:
         conn.close()
 
 
-def estado_scope(rol: str, db_path: str) -> dict:
+def estado_scope(rol: str, db_path: str, prefijo_usuario: str = None) -> dict:
     conn = sqlite3.connect(db_path)
     try:
         existe = conn.execute(
@@ -151,7 +156,7 @@ def estado_scope(rol: str, db_path: str) -> dict:
         conn.close()
     return {
         "existe": existe,
-        "pendientes": contar_pendientes(rol, db_path),
+        "pendientes": contar_pendientes(rol, db_path, prefijo_usuario),
         "ultima_actualizacion": ultima_actualizacion,
         "destacadas": destacadas,
     }
@@ -225,8 +230,20 @@ def _subclusterizar_residual(conn, rol: str, residual_id: int, groq_api_key: str
     if len(filas) < config.TEMAS_MIN_PREGUNTAS_NUEVAS:
         return 0, 0
 
+    n_temas_actuales = conn.execute(
+        "SELECT COUNT(*) FROM temas WHERE rol = ? AND es_residual = 0", (rol,)
+    ).fetchone()[0]
+    cupo = config.MAX_TEMAS - n_temas_actuales
+    if cupo <= 0:
+        # Tope global de temas ya alcanzado para este scope: el residual
+        # sigue acumulando como "Preguntas variadas" en vez de seguir
+        # creando temas nuevos sin límite (config.MAX_TEMAS solo limitaba
+        # cada lote de subclusterización en aislamiento, no el total
+        # persistido entre llamadas sucesivas a actualizar_scope()).
+        return 0, 0
+
     embeddings = np.array([json.loads(f[2]) for f in filas], dtype=float)
-    labels = _clusterizar_embeddings(embeddings)
+    labels = _clusterizar_embeddings(embeddings, max_clusters=cupo)
     labels_validos = sorted(set(labels) - {-1})
     if not labels_validos:
         return 0, 0
@@ -241,7 +258,7 @@ def _subclusterizar_residual(conn, rol: str, residual_id: int, groq_api_key: str
     for label in labels_validos:
         indices = [i for i in range(len(filas)) if labels[i] == label]
         centroide = embeddings[indices].mean(axis=0)
-        nombre = nombres_map.get(label) or f"Tema {label + 1}"
+        nombre = nombres_map.get(label) or _nombre_fallback([filas[i][1] for i in indices])
         cur = conn.execute(
             "INSERT INTO temas (rol, nombre, es_residual, centroide, n_preguntas) VALUES (?, ?, 0, ?, ?)",
             (rol, nombre, json.dumps(centroide.tolist()), len(indices)),
@@ -303,7 +320,7 @@ def _refrescar_destacadas(conn, rol: str, textos_nuevos: list, groq_api_key: str
         return previas
 
 
-def actualizar_scope(rol: str, groq_api_key: str, db_path: str) -> dict:
+def actualizar_scope(rol: str, groq_api_key: str, db_path: str, prefijo_usuario: str = None) -> dict:
     """
     Bootstrap (scope nuevo, sin temas) y actualización incremental son la
     MISMA operación: un scope nuevo tiene 100% del corpus "pendiente", que
@@ -314,7 +331,7 @@ def actualizar_scope(rol: str, groq_api_key: str, db_path: str) -> dict:
     try:
         conn.execute("BEGIN IMMEDIATE")
 
-        pendientes, max_id_visto = _pendientes_dedup(conn, rol)
+        pendientes, max_id_visto = _pendientes_dedup(conn, rol, prefijo_usuario)
         if len(pendientes) < config.TEMAS_MIN_PREGUNTAS_NUEVAS:
             conn.execute("ROLLBACK")
             return {"procesadas": 0, "temas_nuevos": 0, "reasignadas_desde_residual": 0}

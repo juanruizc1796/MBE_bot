@@ -35,6 +35,38 @@ DB_PATH = os.getenv("LOGS_DB_PATH", "data/logs/mbe_logs.db")
 # "docentes"/"todos" eran opciones ilustrativas del filtro que ya no se exponen.
 ROL_REPORTE = "estudiantes"
 
+# Filtro temporal, solo para las estadísticas del reporte de uso: mientras
+# conviven cuentas de prueba/demo ("Estudiante7@...") con cuentas reales de
+# estudiantes que no siguen ese patrón de nombre, el reporte solo debe
+# mostrar las primeras más las cuentas reales admitidas explícitamente aquí
+# (a diferencia de otras cuentas reales como juan.ruizc@... o
+# gonzalez_yibby@..., que se mantienen fuera por ahora). Es una tupla de
+# prefijos porque tanto str.startswith como Series.str.startswith aceptan
+# tuplas; los emails completos actúan como "prefijo" de coincidencia exacta.
+# Esto NO toca roles.py/auth: no cambia quién es Docente/Estudiante para
+# permisos, solo qué filas entran a los cálculos y a la lista/roster que ve
+# el reporte.
+PREFIJO_USUARIO_REPORTE = (
+    "estudiante",
+    "garciasophia@javeriana.edu.co",
+    "lucas.restrepom@javeriana.edu.co",
+)
+
+
+def _solo_prefijo_reporte(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return df
+    mascara = df["usuario"].astype(str).str.lower().str.startswith(PREFIJO_USUARIO_REPORTE)
+    return df[mascara].reset_index(drop=True)
+
+
+def _roster_prefijo_reporte(roster: dict) -> dict:
+    return {
+        u: nombre
+        for u, nombre in roster.items()
+        if u.startswith(PREFIJO_USUARIO_REPORTE)
+    }
+
 
 class DatosInsuficientes(Exception):
     def __init__(self, n: int):
@@ -66,15 +98,15 @@ def _cargar(desde: str, hasta: str):
     df_actual, df_anterior = load_data_con_periodo_anterior(DB_PATH, desde, hasta)
     df_historico = load_data_historico(DB_PATH)
     return (
-        filtrar_por_rol(df_actual, ROL_REPORTE),
-        filtrar_por_rol(df_anterior, ROL_REPORTE),
-        filtrar_por_rol(df_historico, ROL_REPORTE),
+        _solo_prefijo_reporte(filtrar_por_rol(df_actual, ROL_REPORTE)),
+        _solo_prefijo_reporte(filtrar_por_rol(df_anterior, ROL_REPORTE)),
+        _solo_prefijo_reporte(filtrar_por_rol(df_historico, ROL_REPORTE)),
     )
 
 
 def pulso(desde: str, hasta: str) -> dict:
     df_actual, df_anterior, df_historico = _cargar(desde, hasta)
-    roster = cargar_roster()
+    roster = _roster_prefijo_reporte(cargar_roster())
 
     kpis_delta = kpis_con_delta(df_actual, df_anterior)
     kpis_delta["tiempo_promedio_sesion"]["valor_fmt"] = formatear_duracion(
@@ -83,7 +115,7 @@ def pulso(desde: str, hasta: str) -> dict:
 
     sparkline_data = sparkline_semanal(df_historico, hasta, semanas=4)
 
-    scope = topic_store.estado_scope(ROL_REPORTE, DB_PATH)
+    scope = topic_store.estado_scope(ROL_REPORTE, DB_PATH, PREFIJO_USUARIO_REPORTE)
     mapeo_temas = topic_store.mapeo_pregunta_tema(ROL_REPORTE, DB_PATH) if scope["existe"] else {}
 
     tema_en_alza = None
@@ -114,18 +146,18 @@ def pulso(desde: str, hasta: str) -> dict:
 
 
 def generar_temas(desde: str, hasta: str, groq_api_key: str) -> dict:
-    if not topic_store.estado_scope(ROL_REPORTE, DB_PATH)["existe"]:
-        n = topic_store.contar_pendientes(ROL_REPORTE, DB_PATH)
+    if not topic_store.estado_scope(ROL_REPORTE, DB_PATH, PREFIJO_USUARIO_REPORTE)["existe"]:
+        n = topic_store.contar_pendientes(ROL_REPORTE, DB_PATH, PREFIJO_USUARIO_REPORTE)
         if n < TEMAS_MIN_PREGUNTAS_NUEVAS:
             raise DatosInsuficientes(n)
-    topic_store.actualizar_scope(ROL_REPORTE, groq_api_key, DB_PATH)
+    topic_store.actualizar_scope(ROL_REPORTE, groq_api_key, DB_PATH, PREFIJO_USUARIO_REPORTE)
     return estado_temas(desde, hasta)
 
 
 def estado_temas(desde: str, hasta: str) -> dict:
-    scope = topic_store.estado_scope(ROL_REPORTE, DB_PATH)
+    scope = topic_store.estado_scope(ROL_REPORTE, DB_PATH, PREFIJO_USUARIO_REPORTE)
     if not scope["existe"]:
-        return {"status": "idle"}
+        return {"status": "idle", "pendientes": scope["pendientes"]}
 
     mapeo = topic_store.mapeo_pregunta_tema(ROL_REPORTE, DB_PATH)
     df_actual, _, _ = _cargar(desde, hasta)
@@ -141,12 +173,13 @@ def estado_temas(desde: str, hasta: str) -> dict:
         "temas": temas,
         "preguntas_destacadas": scope["destacadas"],
         "evolucion_semanal": evolucion_json,
+        "pendientes": scope["pendientes"],
     }
 
 
 def estudiantes(desde: str, hasta: str) -> dict:
     df_actual, _, df_historico = _cargar(desde, hasta)
-    roster = cargar_roster()
+    roster = _roster_prefijo_reporte(cargar_roster())
     mapeo_temas = topic_store.mapeo_pregunta_tema(ROL_REPORTE, DB_PATH)
 
     tabla = tabla_estudiantes(df_actual, mapeo_temas, roster)

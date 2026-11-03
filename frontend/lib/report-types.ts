@@ -59,6 +59,7 @@ export interface TemasEstado {
   temas?: Tema[];
   preguntas_destacadas?: string[];
   evolucion_semanal?: EvolucionSemanalPunto[];
+  pendientes?: number;
 }
 
 export interface EstudianteRoster {

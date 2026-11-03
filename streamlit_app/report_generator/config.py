@@ -27,8 +27,13 @@ MAX_TEMAS = 10
 # Número máximo de preguntas de ejemplo mostradas por tema en la tabla
 MAX_EJEMPLOS_POR_TEMA = 3
 
-# Modelo de Groq usado para nombrar cada grupo temático
-GROQ_MODEL = "llama-3.1-8b-instant"
+# Modelo de Groq usado para nombrar cada grupo temático.
+# "llama-3.1-8b-instant" (el usado hasta 2026-08-21) fue retirado del catálogo
+# de Groq y toda llamada de nombrado empezaba a fallar en silencio (ver
+# _nombre_fallback en topic_analysis.py), cayendo siempre al nombre de
+# respaldo. Se cambió al mismo modelo que ya usa el chat principal
+# (app/core.py), confirmado activo en la cuenta y ya probado en español.
+GROQ_MODEL = "openai/gpt-oss-20b"
 
 # Offset de zona horaria aplicado al timestamp leído de la DB.
 # SQLite CURRENT_TIMESTAMP guarda siempre en UTC.

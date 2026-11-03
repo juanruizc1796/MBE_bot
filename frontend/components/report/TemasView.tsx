@@ -30,6 +30,7 @@ export function TemasView({ initialEstado, desde, hasta }: TemasViewProps) {
   );
   const [temas, setTemas] = useState<Tema[]>(initialEstado.temas ?? []);
   const [evolucion, setEvolucion] = useState<EvolucionSemanalPunto[]>(initialEstado.evolucion_semanal ?? []);
+  const [pendientes, setPendientes] = useState<number>(initialEstado.pendientes ?? 0);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [fase, setFase] = useState(FASES[0]);
   const [expandido, setExpandido] = useState<Record<string, boolean>>(
@@ -54,17 +55,18 @@ export function TemasView({ initialEstado, desde, hasta }: TemasViewProps) {
 
       if (!res.ok) {
         setErrorMsg(data.detail ?? "No se pudo generar el análisis.");
-        setStatus("idle");
+        setStatus(temas.length > 0 ? "generado" : "idle");
         return;
       }
 
       setTemas(data.temas ?? []);
       setEvolucion(data.evolucion_semanal ?? []);
+      setPendientes(data.pendientes ?? 0);
       setStatus("generado");
       if (focoTema) setExpandido((prev) => ({ ...prev, [focoTema]: true }));
     } catch {
       setErrorMsg("No se pudo generar el análisis. Intenta de nuevo.");
-      setStatus("idle");
+      setStatus(temas.length > 0 ? "generado" : "idle");
     } finally {
       if (intervalRef.current) clearInterval(intervalRef.current);
     }
@@ -101,6 +103,9 @@ export function TemasView({ initialEstado, desde, hasta }: TemasViewProps) {
           evolucion={evolucion}
           expandido={expandido}
           onToggle={(nombre) => setExpandido((prev) => ({ ...prev, [nombre]: !prev[nombre] }))}
+          pendientes={pendientes}
+          onGenerate={() => void generar()}
+          errorMsg={errorMsg}
         />
       )}
     </div>

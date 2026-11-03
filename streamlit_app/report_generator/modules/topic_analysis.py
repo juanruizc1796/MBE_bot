@@ -36,6 +36,43 @@ def _deduplicar(preguntas: list) -> list:
 
 _MODEL_CACHE: dict = {}
 
+# Palabras vacías en español, usadas solo para el nombre de respaldo cuando
+# Groq no devuelve título para un cluster (ver _nombre_fallback).
+_STOPWORDS_ES = {
+    "que", "qué", "el", "la", "los", "las", "de", "del", "en", "y", "a",
+    "un", "una", "unos", "unas", "es", "son", "por", "para", "con", "se",
+    "su", "sus", "como", "cómo", "cual", "cuál", "cuales", "cuáles",
+    "cuando", "cuándo", "donde", "dónde", "porque", "sobre", "entre", "al",
+    "lo", "le", "les", "mi", "mis", "tu", "tus", "este", "esta", "estos",
+    "estas", "ese", "esa", "esos", "esas", "hay", "ser", "fue", "más",
+    "menos", "muy", "también", "pero", "si", "no", "o", "u", "e", "puede",
+    "pueden", "debe", "deben", "hace", "hacer", "sobre", "tiene", "tienen",
+}
+
+
+def _nombre_fallback(preguntas: list) -> str:
+    """
+    Nombre de respaldo cuando Groq no devuelve título para un cluster (falla
+    la llamada, rate limit, o el modelo omite ese id en el JSON de
+    respuesta). Un "Tema N" genérico no le dice nada al docente sobre qué se
+    está preguntando, así que en su lugar se extraen las palabras más
+    frecuentes (excluyendo stopwords) entre las preguntas del grupo, dando
+    al menos una pista intuitiva del subtema.
+    """
+    conteo: dict = {}
+    for p in preguntas:
+        for palabra in re.findall(r"[a-záéíóúñü]+", p.lower()):
+            if len(palabra) < 4 or palabra in _STOPWORDS_ES:
+                continue
+            conteo[palabra] = conteo.get(palabra, 0) + 1
+
+    if not conteo:
+        primera = preguntas[0].strip() if preguntas else "Preguntas variadas"
+        return (primera[:40] + "…") if len(primera) > 40 else primera
+
+    top = sorted(conteo.items(), key=lambda kv: (-kv[1], kv[0]))[:3]
+    return " ".join(w for w, _ in top).capitalize()
+
 
 def generar_embeddings(preguntas_unicas: list) -> np.ndarray:
     """
@@ -84,11 +121,19 @@ def _consolidar_clusters(reduced: np.ndarray, labels: np.ndarray, max_clusters: 
     return labels
 
 
-def _clusterizar_embeddings(embeddings: np.ndarray) -> np.ndarray:
+def _clusterizar_embeddings(embeddings: np.ndarray, max_clusters: int = None) -> np.ndarray:
     """
     UMAP → HDBSCAN (KMeans como fallback) sobre embeddings ya calculados.
     Retorna un array de labels alineado por índice con `embeddings`.
+
+    max_clusters: tope de grupos válidos a devolver (default config.MAX_TEMAS).
+    Lo parametriza topic_store._subclusterizar_residual para respetar el tope
+    GLOBAL de temas de un scope (temas ya existentes + nuevos de este lote),
+    no solo el tope de este lote en aislamiento.
     """
+    if max_clusters is None:
+        max_clusters = config.MAX_TEMAS
+
     n = len(embeddings)
     n_neighbors = min(15, n - 1)
     n_components = min(config.UMAP_N_COMPONENTS, n - 2)
@@ -112,12 +157,12 @@ def _clusterizar_embeddings(embeddings: np.ndarray) -> np.ndarray:
 
     n_clusters_validos = len(set(labels) - {-1})
     if n_clusters_validos < 2:
-        k = max(2, min(config.MAX_TEMAS, int(math.sqrt(n / 2))))
+        k = max(2, min(max_clusters, int(math.sqrt(n / 2))))
         print(f"    HDBSCAN sin grupos suficientes → usando KMeans (k={k})...")
         kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
         labels = kmeans.fit_predict(reduced)
 
-    labels = _consolidar_clusters(reduced, labels, config.MAX_TEMAS)
+    labels = _consolidar_clusters(reduced, labels, max_clusters)
     return labels
 
 
@@ -166,7 +211,7 @@ def compute_topics(preguntas: list, groq_api_key: str) -> list:
     for label in labels_validos:
         indices = np.where(labels == label)[0]
         cluster_qs = [preguntas_unicas[i] for i in indices]
-        nombre = nombres_map.get(label) or f"Tema {label + 1}"
+        nombre = nombres_map.get(label) or _nombre_fallback(cluster_qs)
         temas.append({
             "nombre": nombre,
             "n_preguntas": len(cluster_qs),
@@ -226,7 +271,7 @@ def compute_topics_detallado(preguntas: list, groq_api_key: str) -> dict:
     for label in labels_validos:
         indices = np.where(labels == label)[0]
         cluster_qs = [preguntas_unicas[i] for i in indices]
-        nombre = nombres_map.get(label) or f"Tema {label + 1}"
+        nombre = nombres_map.get(label) or _nombre_fallback(cluster_qs)
         label_a_nombre[label] = nombre
         temas.append({
             "nombre": nombre,
@@ -443,7 +488,9 @@ def resumen_temas(df: pd.DataFrame, tema_por_pregunta: dict) -> list:
             "nombre": nombre,
             "n_preguntas": len(grupo),
             "pct": round(len(grupo) / total * 100, 1),
-            "ejemplos": preguntas[-config.MAX_EJEMPLOS_POR_TEMA:],
+            # Se devuelven todas (no solo las últimas MAX_EJEMPLOS_POR_TEMA):
+            # el frontend pagina la lista con "Ver más" en vez de recortarla acá.
+            "ejemplos": list(reversed(preguntas)),
         })
 
     temas.sort(key=lambda x: x["n_preguntas"], reverse=True)
