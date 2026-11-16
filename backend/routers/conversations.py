@@ -24,6 +24,6 @@ async def obtener_conversacion(conversation_id: str, usuario: dict = Depends(get
 
 @router.post("/conversations", response_model=ConversationDetail)
 async def crear_conversacion(usuario: dict = Depends(get_current_user)):
-    # Solo vive en el cliente hasta la primera pregunta, igual que
-    # crear_chat() de la versión Streamlit (no escribe en la DB todavía).
+    # Solo vive en el cliente hasta la primera pregunta: no escribe en la DB
+    # todavía (la conversación aparece en el historial al registrar la 1ª consulta).
     return {"id": str(uuid.uuid4()), "title": "Nueva conversacion", "messages": []}
