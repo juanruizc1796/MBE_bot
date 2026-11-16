@@ -3,8 +3,8 @@
 
 Asistente conversacional **RAG** que responde preguntas de Medicina Basada en la Evidencia citando autor, libro y página del corpus del curso. También incluye un **reporte docente** de analítica de aprendizaje (KPIs, temas, alertas y seguimiento por estudiante).
 
-> **Autores:** Yibby González · Juan Ruiz
-> **Profesores:** Juan Pablo Pájaro · Fabián Gil
+> **Autores:** Juan Ruiz · Yibby González 
+> **Profesores:** Juan Pajaro · Fabián Gil
 >
 > Proyecto de Tesis de Maestría en Inteligencia Artificial.
 
