@@ -8,11 +8,11 @@ services:
     restart: unless-stopped
     volumes:
       # FAISS index + CSV en modo lectura
-      - ./streamlit_app/data:/app/streamlit_app/data:ro
+      - ./rag_engine/data:/app/rag_engine/data:ro
       # Logs con escritura habilitada (sobre-monta el subpath anterior)
-      - ./streamlit_app/data/logs:/app/streamlit_app/data/logs
+      - ./rag_engine/data/logs:/app/rag_engine/data/logs
       # Usuarios para autenticacion (editable sin rebuild)
-      - ./streamlit_app/users.yaml:/app/streamlit_app/users.yaml:ro
+      - ./rag_engine/users.yaml:/app/rag_engine/users.yaml:ro
     env_file:
       - .env
 
@@ -47,19 +47,3 @@ volumes:
   caddy_data:
   caddy_config:
 
-# --- Streamlit original: NO se levanta en este compose, solo queda
-#     comentado por si se quiere revivir en paralelo. ---
-# streamlit:
-#   build:
-#     context: .
-#     dockerfile: streamlit_app/Dockerfile.app
-#   image: mbe-streamlit:latest
-#   ports:
-#     - "8501:8501"
-#   volumes:
-#     - ./streamlit_app/data:/app/data:ro
-#     - ./streamlit_app/data/logs:/app/data/logs
-#     - ./streamlit_app/Javeriana.png:/app/Javeriana.png:ro
-#     - ./streamlit_app/users.yaml:/app/users.yaml:ro
-#   env_file:
-#     - .env

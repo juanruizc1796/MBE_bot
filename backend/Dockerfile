@@ -1,5 +1,5 @@
 # Construir desde la raíz del repo (contexto = .), porque el backend
-# importa directamente el código de streamlit_app/ sin reimplementarlo.
+# importa directamente el código de rag_engine/ sin reimplementarlo.
 FROM python:3.12-slim
 
 WORKDIR /app
@@ -22,8 +22,8 @@ RUN pip install --no-cache-dir \
     --extra-index-url https://download.pytorch.org/whl/cpu \
     torch==2.6.0+cpu
 
-# --- CAPA 2: dependencias (streamlit_app/requirements.txt + backend/requirements.txt) ---
-COPY streamlit_app/requirements.txt streamlit_app/requirements.txt
+# --- CAPA 2: dependencias (rag_engine/requirements.txt + backend/requirements.txt) ---
+COPY rag_engine/requirements.txt rag_engine/requirements.txt
 COPY backend/requirements.txt backend/requirements.txt
 RUN pip install --no-cache-dir -r backend/requirements.txt
 
@@ -35,13 +35,13 @@ SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
 print('Modelo de embeddings descargado correctamente.')"
 
 # --- CAPA 4: código (cambia frecuentemente, va al final) ---
-# streamlit_app/data/ NO se copia: se monta como volumen en runtime
+# rag_engine/data/ NO se copia: se monta como volumen en runtime
 # (index FAISS + CSV de solo lectura, logs de lectura/escritura).
 COPY backend/ backend/
-COPY streamlit_app/app streamlit_app/app
-COPY streamlit_app/rag_langgraph streamlit_app/rag_langgraph
-COPY streamlit_app/report_generator streamlit_app/report_generator
-COPY streamlit_app/src streamlit_app/src
+COPY rag_engine/app rag_engine/app
+COPY rag_engine/rag_langgraph rag_engine/rag_langgraph
+COPY rag_engine/report_generator rag_engine/report_generator
+COPY rag_engine/src rag_engine/src
 
 EXPOSE 8000
 

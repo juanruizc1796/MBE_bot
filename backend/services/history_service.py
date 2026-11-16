@@ -1,6 +1,6 @@
-"""Wrapea streamlit_app/app/logger.py para exponer historial y logging vía HTTP.
+"""Wrapea rag_engine/app/logger.py para exponer historial y logging vía HTTP.
 
-Misma tabla SQLite que usa Streamlit (data/logs/mbe_logs.db) — no se migra
+Misma tabla SQLite de siempre (data/logs/mbe_logs.db) — no se migra
 esquema ni se reimplementa el logging.
 """
 from backend import bootstrap  # noqa: F401  (deja logger.py importable)
@@ -9,7 +9,7 @@ from logger import load_user_sessions, log_consulta
 
 
 def listar_conversaciones(usuario: str) -> list[dict]:
-    """Más reciente primero, igual que el sidebar de Streamlit."""
+    """Más reciente primero."""
     sesiones = load_user_sessions(usuario)
     return [
         {"id": chat_id, "title": data["title"]}

@@ -1,7 +1,7 @@
-"""Wrapea streamlit_app/report_generator/modules/* para el reporte docente.
+"""Wrapea rag_engine/report_generator/modules/* para el reporte docente.
 
-No reimplementa el análisis (KPIs, alertas, roster): lo importa tal cual corre
-hoy en Streamlit (app/pages/reporte.py). Los "Temas" son la excepción: usan
+No reimplementa el análisis (KPIs, alertas, roster): lo importa tal cual
+desde rag_engine/report_generator/. Los "Temas" son la excepción: usan
 topic_store.py, una taxonomía persistente en SQLite por rol (no por rango de
 fechas) en vez de recalcular el clustering en cada request.
 """

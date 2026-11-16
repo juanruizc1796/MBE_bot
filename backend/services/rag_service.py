@@ -1,6 +1,6 @@
-"""Wrapea streamlit_app/app/core.py y streamlit_app/rag_langgraph/app_langgraph.py.
+"""Wrapea rag_engine/app/core.py y rag_engine/rag_langgraph/app_langgraph.py.
 
-No reimplementa el pipeline RAG: lo importa tal cual corre hoy en Streamlit.
+No reimplementa el pipeline RAG: lo importa tal cual desde rag_engine/.
 """
 from backend import bootstrap  # noqa: F401  (deja core/rag_langgraph importables)
 

@@ -1,8 +1,7 @@
-"""Autenticación contra streamlit_app/users.yaml (mismo archivo que usa
-streamlit-authenticator hoy) + emisión/verificación de JWT.
+"""Autenticación contra rag_engine/users.yaml + emisión/verificación de JWT.
 
 No se migra ningún esquema: las contraseñas ya están hasheadas en bcrypt
-en users.yaml, tal cual las valida Streamlit.
+en users.yaml.
 """
 import os
 import time
@@ -17,7 +16,7 @@ from report_generator.modules.roles import rol_de_usuario
 
 load_dotenv()  # no depender de que algún otro módulo lo haya cargado antes
 
-USERS_YAML_PATH = os.path.join(bootstrap.STREAMLIT_APP_DIR, "users.yaml")
+USERS_YAML_PATH = os.path.join(bootstrap.ENGINE_DIR, "users.yaml")
 
 JWT_SECRET_KEY = os.environ["JWT_SECRET_KEY"]
 JWT_ALGORITHM = "HS256"

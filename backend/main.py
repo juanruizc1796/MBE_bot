@@ -10,11 +10,10 @@ from backend.services import rag_service
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # core.py y logger.py (streamlit_app/app/) resuelven sus rutas de datos
-    # ("data/...", "data/logs/mbe_logs.db") relativas al cwd, tal como corre
-    # hoy Streamlit lanzado desde streamlit_app/. Nos paramos ahí para
-    # reusar ese código sin tocarlo.
-    os.chdir(bootstrap.STREAMLIT_APP_DIR)
+    # core.py y logger.py (rag_engine/app/) resuelven sus rutas de datos
+    # ("data/...", "data/logs/mbe_logs.db") relativas al cwd, así que
+    # nos paramos en rag_engine/ para que esas rutas resuelvan.
+    os.chdir(bootstrap.ENGINE_DIR)
 
     from logger import init_db
 

@@ -1,0 +1,36 @@
+id,edad,semestre,veces_cursada_mbe,horas_semanales_mbe,herramientas_ia,frecuencia_uso_ia,confianza_llm_1a5,claridad_1a5,fundamentacion_1a5,comparacion_generalistas,pu_entender_1a5,bi_volveria,peou_aprender_1a7,peou_interaccion_1a7,control_atencion_1a7,peou_general_1a7
+E01,21,5,1,0,ChatGPT;Claude;,Pocas veces al semestre,5,5,5,ChatGPT/Claude es mejor,4,Probablemente sí,7,7,1,7
+E02,20,5,4,2,ChatGPT;Notebook LM;,Al menos una vez por semana,5,4,4,ChatGPT/Claude es mejor,4,Probablemente no,4,5,2,6
+E03,20,5,1,2,Claude;,Casi todos los días,3,3,4,ChatGPT/Claude es mejor,3,Probablemente no,5,4,1,5
+E04,21,5,1,3,ChatGPT;,Al menos una vez por semana,3,3,5,ChatGPT/Claude es mejor,3,Probablemente sí,6,5,1,5
+E05,19,5,1,2,ChatGPT;Claude;Notebook LM;,Casi todos los días,5,2,2,ChatGPT/Claude es mejor,3,Probablemente sí,7,7,1,7
+E06,20,5,1,2,ChatGPT;Claude;,Casi todos los días,5,4,5,ChatGPT/Claude es mejor,5,Probablemente sí,7,7,7,7
+E07,19,5,1,4,ChatGPT;,Al menos una vez por semana,5,5,4,ChatGPT/Claude es mejor,4,Probablemente no,7,7,7,7
+E08,20,5,1,2,Claude;Notebook LM;,Al menos una vez por semana,3,4,4,MBE-Bot es mejor,4,"Sí, definitivamente",6,6,3,6
+E09,20,5,1,4,ChatGPT;Claude;Notebook LM;,Al menos una vez por semana,3,4,5,MBE-Bot es mejor,5,"Sí, definitivamente",7,7,1,7
+E10,19,5,1,2,ChatGPT;Notebook LM;,Al menos una vez por semana,3,4,4,MBE-Bot es mejor,4,Probablemente sí,6,6,1,6
+E11,20,5,2,3,ChatGPT;Claude;,Al menos una vez por semana,4,4,4,ChatGPT/Claude es mejor,4,"Sí, definitivamente",5,6,6,6
+E12,18,5,1,4,ChatGPT;Claude;,Casi todos los días,4,5,5,MBE-Bot es mejor,5,"Sí, definitivamente",7,7,1,7
+E13,22,5,1,1,ChatGPT;Gemini;,Al menos una vez por semana,4,3,4,Son similares,3,Probablemente sí,7,7,1,7
+E14,20,5,1,1,ChatGPT;Notebook LM;Otra;,Al menos una vez por semana,3,4,3,ChatGPT/Claude es mejor,5,Probablemente sí,7,7,1,7
+E15,20,5,1,3,Claude;ChatGPT;,Pocas veces al semestre,4,3,3,ChatGPT/Claude es mejor,3,Probablemente sí,6,4,1,5
+E16,19,5,1,3,ChatGPT;Otra;,Al menos una vez por semana,4,4,4,ChatGPT/Claude es mejor,4,Probablemente sí,7,7,1,7
+E17,19,5,1,2,ChatGPT;Claude;Gemini;,Casi todos los días,4,3,3,ChatGPT/Claude es mejor,4,Probablemente sí,6,7,2,7
+E18,19,5,1,2,ChatGPT;Notebook LM;,Al menos una vez por semana,4,4,5,Son similares,4,Probablemente sí,6,7,1,6
+E19,20,5,1,4,ChatGPT;Claude;Gemini;,Pocas veces al semestre,5,5,5,Son similares,4,Probablemente sí,7,6,1,5
+E20,20,5,1,2,ChatGPT;Gemini;,Al menos una vez por semana,5,3,5,ChatGPT/Claude es mejor,3,Probablemente sí,7,6,1,7
+E21,19,5,1,2,ChatGPT;Gemini;,Casi todos los días,4,3,5,ChatGPT/Claude es mejor,5,Probablemente sí,7,6,1,7
+E22,20,5,1,1,ChatGPT;Claude;Notebook LM;Gemini;,Al menos una vez por semana,4,4,4,Son similares,4,Probablemente sí,6,6,1,6
+E23,20,5,3,3 horas,ChatGPT;Claude;,Nunca,4,4,4,ChatGPT/Claude es mejor,4,Probablemente sí,5,5,1,6
+E24,20,5,1,2,ChatGPT;Notebook LM;,Al menos una vez por semana,4,5,5,Son similares,5,"Sí, definitivamente",7,7,1,7
+E25,20,5,1,2,ChatGPT;Claude;,Pocas veces al semestre,4,3,4,ChatGPT/Claude es mejor,5,Probablemente sí,4,3,1,4
+E26,20,5,3,6,ChatGPT;,Nunca,5,3,4,ChatGPT/Claude es mejor,2,Probablemente no,5,7,1,7
+E27,20,5,4,2-3 horas,ChatGPT;Claude;Gemini;Notebook LM;,Al menos una vez por semana,3,3,5,ChatGPT/Claude es mejor,5,Probablemente sí,5,6,1,7
+E28,20,5,1,2,Claude;ChatGPT;Notebook LM;,Al menos una vez por semana,4,3,5,ChatGPT/Claude es mejor,4,Probablemente sí,5,7,1,5
+E29,20,5,1,0,ChatGPT;Notebook LM;,Nunca,3,5,5,ChatGPT/Claude es mejor,4,Probablemente sí,6,7,7,7
+E30,20,5,1,1,ChatGPT;Notebook LM;,Al menos una vez por semana,4,5,5,ChatGPT/Claude es mejor,4,Probablemente sí,7,7,1,7
+E31,20,5,1,2,ChatGPT;Gemini;,Al menos una vez por semana,3,4,3,ChatGPT/Claude es mejor,4,Probablemente no,5,4,1,4
+E32,20,5,3,3,ChatGPT;Claude;,Al menos una vez por semana,5,5,5,ChatGPT/Claude es mejor,5,Probablemente sí,7,7,1,7
+E33,20,5,1,3,ChatGPT;Gemini;,Al menos una vez por semana,4,4,5,ChatGPT/Claude es mejor,5,Probablemente sí,6,6,6,6
+E34,20,5,1,4,ChatGPT;Notebook LM;,Casi todos los días,4,4,5,MBE-Bot es mejor,4,Probablemente sí,6,6,1,7
+E35,19,5,1,2,ChatGPT;,Casi todos los días,4,5,5,Son similares,5,Probablemente sí,7,7,7,7

@@ -5,5 +5,4 @@ frontend/.next
 **/__pycache__
 **/*.pyc
 .env
-streamlit_app/data
-cloudflared.exe
+rag_engine/data

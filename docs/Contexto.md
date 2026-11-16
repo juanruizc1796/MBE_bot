@@ -94,7 +94,7 @@ La rama **`migration-nextjs-fastapi`** transforma el sistema en una **arquitectu
 ```
 
 ### 2.2. Flujo de Autenticación y Seguridad por Capas
-1. **Almacenamiento de Credenciales:** El archivo institucional `streamlit_app/users.yaml` define usuarios, correos, nombres, roles (`Docente` o `Estudiante`) y contraseñas cifradas con **Bcrypt** (`$2b$12$...`).
+1. **Almacenamiento de Credenciales:** El archivo institucional `rag_engine/users.yaml` define usuarios, correos, nombres, roles (`Docente` o `Estudiante`) y contraseñas cifradas con **Bcrypt** (`$2b$12$...`).
 2. **Inicio de Sesión (`POST /api/auth/login`):**
    - El cliente envía `username` (correo) y `password`.
    - FastAPI valida el hash Bcrypt contra `users.yaml`.
@@ -247,7 +247,7 @@ El sistema implementa una arquitectura desacoplada de proveedor mediante la vari
 ```
 backend/
 ├── main.py                # Punto de entrada FastAPI, ciclo de vida (lifespan), montaje de routers
-├── bootstrap.py           # Inserción limpia de streamlit_app en sys.path (reuso de módulos)
+├── bootstrap.py           # Inserción limpia de rag_engine en sys.path (reuso de módulos)
 ├── dependencies.py        # Inyección de dependencias de seguridad (JWT, validación de roles)
 ├── requirements.txt       # Dependencias exclusivas de backend (FastAPI, PyJWT, PyYAML, etc.)
 ├── Dockerfile             # Imagen Docker multi-capa con PyTorch CPU y SentenceTransformers
@@ -429,7 +429,7 @@ frontend/app/
 
 ## 8. Observabilidad y Esquema de Base de Datos SQLite
 
-La base de datos relacional `mbe_logs.db` (ubicada en `streamlit_app/data/logs/mbe_logs.db`) actúa como el registro central de verdad y auditoría del sistema.
+La base de datos relacional `mbe_logs.db` (ubicada en `rag_engine/data/logs/mbe_logs.db`) actúa como el registro central de verdad y auditoría del sistema.
 
 ### 8.1. Esquema Relacional Completo
 
@@ -520,9 +520,9 @@ La orquestación se realiza a través de **Docker Compose** con volúmenes persi
 │  │ Contenedor backend (mbe-backend:latest - Python 3.12 FastAPI)         │  │
 │  │ Puerto interno: 8000 | SentenceTransformers + FAISS en memoria        │  │
 │  │ Volúmenes montados desde el Host:                                     │  │
-│  │   · ./streamlit_app/data (ro)       : Índice FAISS y CSV corpus       │  │
-│  │   · ./streamlit_app/data/logs (rw)  : Base de datos SQLite mbe_logs.db│  │
-│  │   · ./streamlit_app/users.yaml (ro) : Credenciales y Roster           │  │
+│  │   · ./rag_engine/data (ro)       : Índice FAISS y CSV corpus       │  │
+│  │   · ./rag_engine/data/logs (rw)  : Base de datos SQLite mbe_logs.db│  │
+│  │   · ./rag_engine/users.yaml (ro) : Credenciales y Roster           │  │
 │  │   · .env (secrets)                  : API Keys de Groq / OpenRouter   │  │
 │  └───────────────────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -540,15 +540,15 @@ Para facilitar la redacción de los capítulos metodológico, de desarrollo y de
 
 | Concepto en la Tesis | Módulo / Archivo en el Código | Detalle Técnico / Algorítmico |
 |---|---|---|
-| **Corpus Bibliográfico** | `streamlit_app/src/preprocess_corpus.py` | 2 libros clásicos MBE (Guyatt 2015, Dans 2017). Chunking por ventana (~100 tokens, 20% overlap, límite pág. 167 Dans). |
-| **Representación Vectorial** | `streamlit_app/src/indexing.py` | Embeddings densos multilingües `MiniLM-L12-v2` ($d=384$), normalizados $L_2$. |
-| **Indexación y Búsqueda** | `streamlit_app/app/core.py` | FAISS CPU con topología `IndexFlatIP` (Similitud Coseno exacta, top $k=3$). |
-| **Pipeline RAG** | `streamlit_app/rag_langgraph/app_langgraph.py` | Grafo de estados LangGraph (`retrieve` $\to$ `generate`). Streaming y captura de metadatos. |
-| **Seguimiento Conversacional** | `streamlit_app/rag_langgraph/app_langgraph.py` | Función `_query_retrieval()`: combina última pregunta de usuario con query actual para resolver elipsis. |
-| **Mitigación de Alucinaciones** | `streamlit_app/rag_langgraph/app_langgraph.py` | Prompt estricto de 4 casos: citas obligatorias `(Autor, Libro, Año — pág. X)`, rechazo OOS y fallback exacto si no hay datos. |
-| **Motor de Inferencia LLM** | `streamlit_app/app/core.py` | `openai/gpt-oss-20b` vía OpenRouter o Groq (`temperature=0.2`, `reasoning_effort="low"`). |
-| **Modelado de Temas** | `streamlit_app/report_generator/modules/topic_store.py` | Clustering incremental: embeddings $\to$ similitud a centroides ($\ge 0.55$) $\to$ UMAP (10D) + HDBSCAN sobre residual $\to$ LLM labeling. |
-| **Alertas Pedagógicas** | `streamlit_app/report_generator/modules/alerts.py` | Detección de tema en alza ($\ge 30\%$), retrieval débil (score $\le 0.40$), silenciosos ($\ge 14$ días) y concentración temporal ($\ge 40\%$). |
-| **Observabilidad y Logs** | `streamlit_app/app/logger.py` & `backend/services/history_service.py` | Registro SQLite de cada consulta con `trace_id`, chunks recuperados, scores de similitud y latencias por etapa (embedding, retrieval, LLM, total). |
+| **Corpus Bibliográfico** | `rag_engine/src/preprocess_corpus.py` | 2 libros clásicos MBE (Guyatt 2015, Dans 2017). Chunking por ventana (~100 tokens, 20% overlap, límite pág. 167 Dans). |
+| **Representación Vectorial** | `rag_engine/src/indexing.py` | Embeddings densos multilingües `MiniLM-L12-v2` ($d=384$), normalizados $L_2$. |
+| **Indexación y Búsqueda** | `rag_engine/app/core.py` | FAISS CPU con topología `IndexFlatIP` (Similitud Coseno exacta, top $k=3$). |
+| **Pipeline RAG** | `rag_engine/rag_langgraph/app_langgraph.py` | Grafo de estados LangGraph (`retrieve` $\to$ `generate`). Streaming y captura de metadatos. |
+| **Seguimiento Conversacional** | `rag_engine/rag_langgraph/app_langgraph.py` | Función `_query_retrieval()`: combina última pregunta de usuario con query actual para resolver elipsis. |
+| **Mitigación de Alucinaciones** | `rag_engine/rag_langgraph/app_langgraph.py` | Prompt estricto de 4 casos: citas obligatorias `(Autor, Libro, Año — pág. X)`, rechazo OOS y fallback exacto si no hay datos. |
+| **Motor de Inferencia LLM** | `rag_engine/app/core.py` | `openai/gpt-oss-20b` vía OpenRouter o Groq (`temperature=0.2`, `reasoning_effort="low"`). |
+| **Modelado de Temas** | `rag_engine/report_generator/modules/topic_store.py` | Clustering incremental: embeddings $\to$ similitud a centroides ($\ge 0.55$) $\to$ UMAP (10D) + HDBSCAN sobre residual $\to$ LLM labeling. |
+| **Alertas Pedagógicas** | `rag_engine/report_generator/modules/alerts.py` | Detección de tema en alza ($\ge 30\%$), retrieval débil (score $\le 0.40$), silenciosos ($\ge 14$ días) y concentración temporal ($\ge 40\%$). |
+| **Observabilidad y Logs** | `rag_engine/app/logger.py` & `backend/services/history_service.py` | Registro SQLite de cada consulta con `trace_id`, chunks recuperados, scores de similitud y latencias por etapa (embedding, retrieval, LLM, total). |
 | **Autenticación y Seguridad** | `backend/services/auth_service.py` & `frontend/proxy.ts` | Bcrypt para verificación de credenciales, JWT (HS256, 24h) almacenado en cookies `httpOnly`, RBAC por rol. |
 | **Arquitectura de Software** | `docker-compose.yml`, `Caddyfile`, `backend/`, `frontend/` | Patrón BFF con Next.js 16 + API REST asíncrona en FastAPI + Reverse proxy Caddy 2. |
